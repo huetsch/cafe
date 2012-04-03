@@ -6,7 +6,7 @@
   "version": "0.0.1",
   "dependencies": {
     "date-helper": ">= 0.1.1",
-    "url-helper": ">= 0.0.3"
+    "url-helper": ">= 0.0.4"
   },
   "main": "./cafe.js",
   "author": "Mark Huetsch <markhuetsch@gmail.com>",

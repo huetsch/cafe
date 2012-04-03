@@ -8,8 +8,10 @@
 
 DateHelper = require 'date-helper'
 UrlHelper = require 'url-helper'
+AssetTagHelper = require 'asset-tag-helper'
 
 root = if window? then window else global
 
 root[k] = v for k, v of DateHelper
 root[k] = v for k, v of UrlHelper
+root[k] = v for k, v of AssetTagHelper

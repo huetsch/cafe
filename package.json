@@ -3,10 +3,11 @@
   "description": "Rails' view helpers and core extensions ported to Coffeescript",
   "keywords": ["date", "date-helper", "rails"],
   "homepage": "https://github.com/huetsch/cafe",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "dependencies": {
     "date-helper": ">= 0.1.1",
-    "url-helper": ">= 0.0.4"
+    "url-helper": ">= 0.0.4",
+    "asset-tag-helper": ">= 0.0.6"
   },
   "main": "./cafe.js",
   "author": "Mark Huetsch <markhuetsch@gmail.com>",

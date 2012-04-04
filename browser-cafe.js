@@ -969,7 +969,15 @@ module.exports = {"main":"./cream.js"}
 
 require.define("/node_modules/cream/cream.js", function (require, module, exports, __dirname, __filename) {
 (function() {
-  var blues_strftime;
+  var blues_strftime,
+    __slice = Array.prototype.slice;
+
+  Object["delete"] = function(obj, k) {
+    var v;
+    v = obj[k];
+    delete obj[k];
+    return v;
+  };
 
   Object.clone = function(obj) {
     var key, newInstance;
@@ -1003,10 +1011,35 @@ require.define("/node_modules/cream/cream.js", function (require, module, export
     if (this.length > 0) return this[this.length - 1];
   };
 
+  Array.prototype.butLast = function() {
+    if (this.length > 0) return this.slice(0, -1);
+  };
+
   Array.prototype.max = function() {
-    return this.reduce(function(a, b) {
-      return Math.max(a, b);
-    });
+    return Math.max.apply(Math, this);
+  };
+
+  Array.prototype.min = function() {
+    return Math.min.apply(Math, this);
+  };
+
+  Array.prototype.zip = function() {
+    var arr, arrs, group, i, max_len, ret, _i, _len;
+    arrs = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    arrs = [Object.clone(this)].concat(arrs);
+    max_len = arrs.map(function(arr) {
+      return arr.length;
+    }).max();
+    ret = [];
+    for (i = 0; 0 <= max_len ? i < max_len : i > max_len; 0 <= max_len ? i++ : i--) {
+      group = [];
+      for (_i = 0, _len = arrs.length; _i < _len; _i++) {
+        arr = arrs[_i];
+        group.push(arr[i]);
+      }
+      ret.push(group);
+    }
+    return ret;
   };
 
   Array.prototype.flatten = function() {
@@ -1041,8 +1074,10 @@ require.define("/node_modules/cream/cream.js", function (require, module, export
     }
   };
 
-  String.prototype.dasherize = function() {
-    return this.replace(/_/g, '-');
+  String.prototype.dasherize = function(reg) {
+    if (reg == null) reg = /_/g;
+    if (typeof reg === 'string') reg = new RegExp(reg, 'g');
+    return this.replace(reg, '-');
   };
 
   String.prototype.html_safe = function() {
@@ -1873,13 +1908,223 @@ require.define("/node_modules/url-helper/node_modules/tag-helper/tag_helper.js",
 
 });
 
+require.define("/node_modules/asset-tag-helper/package.json", function (require, module, exports, __dirname, __filename) {
+module.exports = {"main":"./asset_tag_helper.js"}
+});
+
+require.define("/node_modules/asset-tag-helper/asset_tag_helper.js", function (require, module, exports, __dirname, __filename) {
+(function() {
+  var AssetTagHelper, TagHelper, basename, helper;
+
+  require('cream');
+
+  TagHelper = require('tag-helper');
+
+  basename = function(path, suffix) {
+    var name;
+    if (suffix == null) suffix = null;
+    name = path.split('/').last();
+    if (suffix) {
+      return name.replace(new RegExp("" + (suffix.replace(/\./g, "\\.").replace(/\*/g, '.*')) + "$"), '');
+    } else {
+      return name;
+    }
+  };
+
+  AssetTagHelper = (function() {
+
+    function AssetTagHelper() {}
+
+    AssetTagHelper.prototype.image_path = function(source) {
+      return "/images/" + source;
+    };
+
+    AssetTagHelper.prototype.path_to_image = function(source) {
+      return this.image_path(source);
+    };
+
+    AssetTagHelper.prototype.image_tag = function(source, options) {
+      var mouseover, size, src, _ref;
+      if (options == null) options = {};
+      src = options.src = this.path_to_image(source);
+      if (!(src != null ? src.match(/^cid:/) : void 0)) {
+        options.alt || (options.alt = this.image_alt(src));
+      }
+      if (size = Object["delete"](options, 'size')) {
+        if (size.match(/^\d+x\d+$/)) {
+          _ref = size.split('x'), options.width = _ref[0], options.height = _ref[1];
+        }
+      }
+      if (mouseover = Object["delete"](options, 'mouseover')) {
+        options.onmouseover = "this.src='" + (this.path_to_image(mouseover)) + "'";
+        options.onmouseout = "this.src='" + src + "'";
+      }
+      return TagHelper.tag('img', options);
+    };
+
+    AssetTagHelper.prototype.image_alt = function(src) {
+      return basename(src, '.*').capitalize();
+    };
+
+    return AssetTagHelper;
+
+  })();
+
+  helper = new AssetTagHelper();
+
+  exports.image_path = helper.image_path;
+
+  exports.path_to_image = helper.path_to_image;
+
+  exports.image_tag = helper.image_tag;
+
+  exports.image_alt = helper.image_alt;
+
+}).call(this);
+
+});
+
+require.define("/node_modules/asset-tag-helper/node_modules/tag-helper/package.json", function (require, module, exports, __dirname, __filename) {
+module.exports = {"main":"./tag_helper.js"}
+});
+
+require.define("/node_modules/asset-tag-helper/node_modules/tag-helper/tag_helper.js", function (require, module, exports, __dirname, __filename) {
+(function() {
+  var TagHelper, helper,
+    __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  require('cream');
+
+  String.prototype.html_safe = function() {
+    this.is_html_safe = 1;
+    return this;
+  };
+
+  TagHelper = (function() {
+
+    function TagHelper() {}
+
+    TagHelper.prototype.HTML_ESCAPE = {
+      '&': '&amp;',
+      '>': '&gt;',
+      '<': '&lt;',
+      '"': '&quot;'
+    };
+
+    TagHelper.prototype.JSON_ESCAPE = {
+      '&': '\u0026',
+      '>': '\u003E',
+      '<': '\u003C'
+    };
+
+    TagHelper.prototype.BOOLEAN_ATTRIBUTES = ['disabled', 'readonly', 'multiple', 'checked', 'autobuffer', 'autoplay', 'controls', 'loop', 'selected', 'hidden', 'scoped', 'async', 'defer', 'reversed', 'ismap', 'seemless', 'muted', 'required', 'autofocus', 'novalidate', 'formnovalidate', 'open', 'pubdate'];
+
+    TagHelper.prototype.html_escape = function(s) {
+      if (!(s instanceof String)) s = String(s);
+      if (s.is_html_safe == null) {
+        return s.replace(/&/g, "&amp;").replace(/\"/g, "&quot;").replace(/>/g, "&gt;").replace(/</g, "&lt;").html_safe();
+      } else {
+        return s;
+      }
+    };
+
+    TagHelper.prototype.tag = function(name, options, open, escape) {
+      var tag_options;
+      if (options == null) options = null;
+      if (open == null) open = false;
+      if (escape == null) escape = true;
+      tag_options = '';
+      if (options) tag_options = this.tag_options(options, escape);
+      return ("<" + name + tag_options + (open ? '>' : ' />')).html_safe();
+    };
+
+    TagHelper.prototype.content_tag = function(name, content_or_options_with_block, options, escape) {
+      if (content_or_options_with_block == null) {
+        content_or_options_with_block = null;
+      }
+      if (options == null) options = null;
+      if (escape == null) escape = true;
+      return this.content_tag_string(name, content_or_options_with_block, options, escape);
+    };
+
+    TagHelper.prototype.content_tag_string = function(name, content, options, escape) {
+      var tag_options;
+      if (escape == null) escape = true;
+      tag_options = options ? this.tag_options(options, escape) : '';
+      return ("<" + name + tag_options + ">" + (escape ? this.html_escape(content) : content) + "</" + name + ">").html_safe();
+    };
+
+    TagHelper.prototype.tag_options = function(options, escape) {
+      var attrs, final_value, k, key, keys, v, value;
+      if (escape == null) escape = true;
+      keys = (function() {
+        var _results;
+        _results = [];
+        for (k in options) {
+          v = options[k];
+          _results.push(k);
+        }
+        return _results;
+      })();
+      if (keys.length !== 0) {
+        attrs = [];
+        for (key in options) {
+          value = options[key];
+          if (key === 'data' && typeof value === 'object') {
+            for (k in value) {
+              v = value[k];
+              if (typeof v !== 'string') v = JSON.stringify(v);
+              if (escape) v = this.html_escape(v);
+              attrs.push("data-" + (k.dasherize()) + "=\"" + v + "\"");
+            }
+          } else if (__indexOf.call(this.BOOLEAN_ATTRIBUTES, key) >= 0) {
+            if (value) attrs.push("" + key + "=\"" + key + "\"");
+          } else if (value !== null && value !== void 0) {
+            final_value = value;
+            if (value instanceof Array) final_value = value.join(" ");
+            if (escape) final_value = this.html_escape(final_value);
+            attrs.push("" + key + "=\"" + final_value + "\"");
+          }
+        }
+        if (attrs.length !== 0) {
+          return (" " + (attrs.sort().join(' '))).html_safe();
+        }
+      }
+    };
+
+    return TagHelper;
+
+  })();
+
+  helper = new TagHelper();
+
+  exports.html_escape = helper.html_escape;
+
+  exports.tag = helper.tag;
+
+  exports.content_tag = helper.content_tag_string;
+
+  exports.tag_options = helper.tag_options;
+
+  exports.BOOLEAN_ATTRIBUTES = helper.BOOLEAN_ATTRIBUTES;
+
+  exports.HTML_ESCAPE = helper.HTML_ESCAPE;
+
+  exports.JSON_ESCAPE = helper.JSON_ESCAPE;
+
+}).call(this);
+
+});
+
 require.define("/cafe.coffee", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var DateHelper, UrlHelper, k, root, v;
+  var AssetTagHelper, DateHelper, UrlHelper, k, root, v;
 
   DateHelper = require('date-helper');
 
   UrlHelper = require('url-helper');
+
+  AssetTagHelper = require('asset-tag-helper');
 
   root = typeof window !== "undefined" && window !== null ? window : global;
 
@@ -1890,6 +2135,11 @@ require.define("/cafe.coffee", function (require, module, exports, __dirname, __
 
   for (k in UrlHelper) {
     v = UrlHelper[k];
+    root[k] = v;
+  }
+
+  for (k in AssetTagHelper) {
+    v = AssetTagHelper[k];
     root[k] = v;
   }
 

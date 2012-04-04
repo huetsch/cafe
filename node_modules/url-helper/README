@@ -1,0 +1,1 @@
+A first go at porting Rails' UrlHelper to Coffeescript. Makes use of Backbone model's url() if relevant.

@@ -9,9 +9,13 @@
 DateHelper = require 'date-helper'
 UrlHelper = require 'url-helper'
 AssetTagHelper = require 'asset-tag-helper'
+FormOptionsHelper = require 'form-options-helper'
+FormTagHelper = require 'form-tag-helper'
 
 root = if window? then window else global
 
 root[k] = v for k, v of DateHelper
 root[k] = v for k, v of UrlHelper
 root[k] = v for k, v of AssetTagHelper
+root[k] = v for k, v of FormOptionsHelper
+root[k] = v for k, v of FormTagHelper

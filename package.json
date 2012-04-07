@@ -7,7 +7,9 @@
   "dependencies": {
     "date-helper": ">= 0.1.1",
     "url-helper": ">= 0.0.4",
-    "asset-tag-helper": ">= 0.0.6"
+    "asset-tag-helper": ">= 0.0.6",
+    "form-options-helper": ">= 0.0.3",
+    "form-tag-helper": ">= 0.0.4"
   },
   "main": "./cafe.js",
   "author": "Mark Huetsch <markhuetsch@gmail.com>",

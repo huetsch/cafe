@@ -970,6 +970,7 @@ module.exports = {"main":"./cream.js"}
 require.define("/node_modules/cream/cream.js", function (require, module, exports, __dirname, __filename) {
 (function() {
   var blues_strftime,
+    __hasProp = Object.prototype.hasOwnProperty,
     __slice = Array.prototype.slice;
 
   Object["delete"] = function(obj, k) {
@@ -987,6 +988,52 @@ require.define("/node_modules/cream/cream.js", function (require, module, export
       newInstance[key] = Object.clone(obj[key]);
     }
     return newInstance;
+  };
+
+  Object.merge = function(o1, o2) {
+    var k, v;
+    o1 = Object.clone(o1);
+    for (k in o2) {
+      if (!__hasProp.call(o2, k)) continue;
+      v = o2[k];
+      o1[k] = v;
+    }
+    return o1;
+  };
+
+  Object.update = function(o1, o2) {
+    var k, v;
+    for (k in o2) {
+      if (!__hasProp.call(o2, k)) continue;
+      v = o2[k];
+      o1[k] = v;
+    }
+    return o1;
+  };
+
+  Object.toArray = function(obj) {
+    var k, v, _results;
+    _results = [];
+    for (k in obj) {
+      if (!__hasProp.call(obj, k)) continue;
+      v = obj[k];
+      _results.push([k, v]);
+    }
+    return _results;
+  };
+
+  Object.isPlainObject = function(obj) {
+    return (obj && (typeof obj === 'object') && (Object.getPrototypeOf(obj) === Object.prototype) && (Object.prototype.toString.call(obj) === {}.toString())) || false;
+  };
+
+  Array.wrap = function(obj) {
+    if (obj instanceof Array) {
+      return obj;
+    } else if (obj === null || obj === void 0) {
+      return [];
+    } else {
+      return [obj];
+    }
   };
 
   Array.prototype.sum = function() {
@@ -1052,6 +1099,22 @@ require.define("/node_modules/cream/cream.js", function (require, module, export
     }), []);
   };
 
+  Array.prototype.select = Array.prototype.filter;
+
+  Array.prototype.reject = function(fn) {
+    return this.select(function(x) {
+      return !fn(x);
+    });
+  };
+
+  Array.prototype.extract_options = function() {
+    if (Object.isPlainObject(this.last())) {
+      return this.pop();
+    } else {
+      return {};
+    }
+  };
+
   String.prototype.capitalize = function() {
     return (this.split(' ').map(function(word) {
       return word[0].toUpperCase() + word.slice(1).toLowerCase();
@@ -1079,6 +1142,8 @@ require.define("/node_modules/cream/cream.js", function (require, module, export
     if (typeof reg === 'string') reg = new RegExp(reg, 'g');
     return this.replace(reg, '-');
   };
+
+  String.prototype.strip = String.prototype.trim;
 
   String.prototype.html_safe = function() {
     this.is_html_safe = 1;
@@ -1124,11 +1189,11 @@ require.define("/node_modules/cream/cream.js", function (require, module, export
   };
 
   Date.prototype.tomorrow = function() {
-    return new Date(this.valueOf() + 24..hours());
+    return new Date(this.valueOf() + 24 * 60 * 60 * 1000);
   };
 
   Date.prototype.yesterday = function() {
-    return new Date(this.valueOf() - 24..hours());
+    return new Date(this.valueOf() - 24 * 60 * 60 * 1000);
   };
 
   Date.prototype.beginning_of_day = function() {
@@ -2116,15 +2181,458 @@ require.define("/node_modules/asset-tag-helper/node_modules/tag-helper/tag_helpe
 
 });
 
+require.define("/node_modules/form-options-helper/package.json", function (require, module, exports, __dirname, __filename) {
+module.exports = {"main":"./form_options_helper.js"}
+});
+
+require.define("/node_modules/form-options-helper/form_options_helper.js", function (require, module, exports, __dirname, __filename) {
+(function() {
+  var FormOptionsHelper, TagHelper, helper,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = Object.prototype.hasOwnProperty,
+    __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  require('cream');
+
+  TagHelper = require('tag-helper');
+
+  FormOptionsHelper = (function() {
+
+    function FormOptionsHelper() {
+      this.extract_selected_and_disabled = __bind(this.extract_selected_and_disabled, this);
+      this.is_option_value_selected = __bind(this.is_option_value_selected, this);
+      this.option_text_and_value = __bind(this.option_text_and_value, this);
+      this.option_html_attributes = __bind(this.option_html_attributes, this);
+      this.options_for_select = __bind(this.options_for_select, this);
+    }
+
+    FormOptionsHelper.prototype.options_for_select = function(container, selected) {
+      var disabled, _ref,
+        _this = this;
+      if (selected == null) selected = null;
+      if (typeof container === 'string') return container;
+      _ref = this.extract_selected_and_disabled(selected).map(function(r) {
+        return Array.wrap(r).map(function(item) {
+          if (item instanceof String) {
+            return item;
+          } else {
+            return String(item);
+          }
+        });
+      }), selected = _ref[0], disabled = _ref[1];
+      if (Object.isPlainObject(container)) container = Object.toArray(container);
+      return container.map(function(element) {
+        var disabled_attribute, html_attributes, selected_attribute, text, value, _ref2;
+        html_attributes = _this.option_html_attributes(element);
+        _ref2 = _this.option_text_and_value(element).map(function(item) {
+          if (item instanceof String) {
+            return item;
+          } else {
+            return String(item);
+          }
+        }), text = _ref2[0], value = _ref2[1];
+        if (_this.is_option_value_selected(value, selected)) {
+          selected_attribute = ' selected="selected"';
+        }
+        if (disabled && _this.is_option_value_selected(value, disabled)) {
+          disabled_attribute = ' disabled="disabled"';
+        }
+        return "<option value=\"" + (TagHelper.html_escape(value)) + "\"" + (selected_attribute || '') + (disabled_attribute || '') + (html_attributes || '') + ">" + (TagHelper.html_escape(text)) + "</option>";
+      }).join("\n").html_safe();
+    };
+
+    FormOptionsHelper.prototype.option_html_attributes = function(element) {
+      var html_attributes, k, v, _ref;
+      if (!(element instanceof Array)) return "";
+      html_attributes = [];
+      _ref = element.select(function(e) {
+        return Object.isPlainObject(e);
+      }).reduce(Object.merge, {});
+      for (k in _ref) {
+        if (!__hasProp.call(_ref, k)) continue;
+        v = _ref[k];
+        html_attributes.push(" " + k + "=\"" + (TagHelper.html_escape(v.toString())) + "\"");
+      }
+      return html_attributes.join('');
+    };
+
+    FormOptionsHelper.prototype.option_text_and_value = function(option) {
+      var _this = this;
+      if (option instanceof Array) {
+        option = option.reject(function(e) {
+          return Object.isPlainObject(e);
+        });
+        return [option.first(), option.last()];
+      } else if ((!(option instanceof String)) && (option.first instanceof Function) && (option.last instanceof Function)) {
+        return [option.first(), option.last()];
+      } else {
+        return [option, option];
+      }
+    };
+
+    FormOptionsHelper.prototype.is_option_value_selected = function(value, selected) {
+      if (selected instanceof Array) {
+        return __indexOf.call(selected, value) >= 0;
+      } else if (Object.isPlainObject(selected)) {
+        return selected[value] != null;
+      } else {
+        return value === selected;
+      }
+    };
+
+    FormOptionsHelper.prototype.extract_selected_and_disabled = function(selected) {
+      var options;
+      if (selected instanceof Function) {
+        return [selected, null];
+      } else {
+        selected = Array.wrap(selected);
+        options = selected.extract_options();
+        return [(options.selected != null ? options.selected : selected), options.disabled];
+      }
+    };
+
+    return FormOptionsHelper;
+
+  })();
+
+  helper = new FormOptionsHelper();
+
+  exports.options_for_select = helper.options_for_select;
+
+}).call(this);
+
+});
+
+require.define("/node_modules/form-options-helper/node_modules/tag-helper/package.json", function (require, module, exports, __dirname, __filename) {
+module.exports = {"main":"./tag_helper.js"}
+});
+
+require.define("/node_modules/form-options-helper/node_modules/tag-helper/tag_helper.js", function (require, module, exports, __dirname, __filename) {
+(function() {
+  var TagHelper, helper,
+    __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  require('cream');
+
+  String.prototype.html_safe = function() {
+    this.is_html_safe = 1;
+    return this;
+  };
+
+  TagHelper = (function() {
+
+    function TagHelper() {}
+
+    TagHelper.prototype.HTML_ESCAPE = {
+      '&': '&amp;',
+      '>': '&gt;',
+      '<': '&lt;',
+      '"': '&quot;'
+    };
+
+    TagHelper.prototype.JSON_ESCAPE = {
+      '&': '\u0026',
+      '>': '\u003E',
+      '<': '\u003C'
+    };
+
+    TagHelper.prototype.BOOLEAN_ATTRIBUTES = ['disabled', 'readonly', 'multiple', 'checked', 'autobuffer', 'autoplay', 'controls', 'loop', 'selected', 'hidden', 'scoped', 'async', 'defer', 'reversed', 'ismap', 'seemless', 'muted', 'required', 'autofocus', 'novalidate', 'formnovalidate', 'open', 'pubdate'];
+
+    TagHelper.prototype.html_escape = function(s) {
+      if (!(s instanceof String)) s = String(s);
+      if (s.is_html_safe == null) {
+        return s.replace(/&/g, "&amp;").replace(/\"/g, "&quot;").replace(/>/g, "&gt;").replace(/</g, "&lt;").html_safe();
+      } else {
+        return s;
+      }
+    };
+
+    TagHelper.prototype.tag = function(name, options, open, escape) {
+      var tag_options;
+      if (options == null) options = null;
+      if (open == null) open = false;
+      if (escape == null) escape = true;
+      tag_options = '';
+      if (options) tag_options = this.tag_options(options, escape);
+      return ("<" + name + tag_options + (open ? '>' : ' />')).html_safe();
+    };
+
+    TagHelper.prototype.content_tag = function(name, content_or_options_with_block, options, escape) {
+      if (content_or_options_with_block == null) {
+        content_or_options_with_block = null;
+      }
+      if (options == null) options = null;
+      if (escape == null) escape = true;
+      return this.content_tag_string(name, content_or_options_with_block, options, escape);
+    };
+
+    TagHelper.prototype.content_tag_string = function(name, content, options, escape) {
+      var tag_options;
+      if (escape == null) escape = true;
+      tag_options = options ? this.tag_options(options, escape) : '';
+      return ("<" + name + tag_options + ">" + (escape ? this.html_escape(content) : content) + "</" + name + ">").html_safe();
+    };
+
+    TagHelper.prototype.tag_options = function(options, escape) {
+      var attrs, final_value, k, key, keys, v, value;
+      if (escape == null) escape = true;
+      keys = (function() {
+        var _results;
+        _results = [];
+        for (k in options) {
+          v = options[k];
+          _results.push(k);
+        }
+        return _results;
+      })();
+      if (keys.length !== 0) {
+        attrs = [];
+        for (key in options) {
+          value = options[key];
+          if (key === 'data' && typeof value === 'object') {
+            for (k in value) {
+              v = value[k];
+              if (typeof v !== 'string') v = JSON.stringify(v);
+              if (escape) v = this.html_escape(v);
+              attrs.push("data-" + (k.dasherize()) + "=\"" + v + "\"");
+            }
+          } else if (__indexOf.call(this.BOOLEAN_ATTRIBUTES, key) >= 0) {
+            if (value) attrs.push("" + key + "=\"" + key + "\"");
+          } else if (value !== null && value !== void 0) {
+            final_value = value;
+            if (value instanceof Array) final_value = value.join(" ");
+            if (escape) final_value = this.html_escape(final_value);
+            attrs.push("" + key + "=\"" + final_value + "\"");
+          }
+        }
+        if (attrs.length !== 0) {
+          return (" " + (attrs.sort().join(' '))).html_safe();
+        }
+      }
+    };
+
+    return TagHelper;
+
+  })();
+
+  helper = new TagHelper();
+
+  exports.html_escape = helper.html_escape;
+
+  exports.tag = helper.tag;
+
+  exports.content_tag = helper.content_tag_string;
+
+  exports.tag_options = helper.tag_options;
+
+  exports.BOOLEAN_ATTRIBUTES = helper.BOOLEAN_ATTRIBUTES;
+
+  exports.HTML_ESCAPE = helper.HTML_ESCAPE;
+
+  exports.JSON_ESCAPE = helper.JSON_ESCAPE;
+
+}).call(this);
+
+});
+
+require.define("/node_modules/form-tag-helper/package.json", function (require, module, exports, __dirname, __filename) {
+module.exports = {"main":"./form_tag_helper.js"}
+});
+
+require.define("/node_modules/form-tag-helper/form_tag_helper.js", function (require, module, exports, __dirname, __filename) {
+(function() {
+  var FormTagHelper, TagHelper, helper,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  require('cream');
+
+  TagHelper = require('tag-helper');
+
+  FormTagHelper = (function() {
+
+    function FormTagHelper() {
+      this.sanitize_to_id = __bind(this.sanitize_to_id, this);
+      this.select_tag = __bind(this.select_tag, this);
+    }
+
+    FormTagHelper.prototype.select_tag = function(name, option_tags, options) {
+      var html_name, prompt;
+      if (option_tags == null) option_tags = null;
+      if (options == null) options = {};
+      html_name = options.multiple === true && (!new String(name).endsWith("[]")) ? "" + name + "[]" : name;
+      if (Object["delete"](options, 'include_blank')) {
+        option_tags = "<option value=\"\"></option>".html_safe().concat(option_tags);
+      }
+      if (prompt = Object["delete"](options, 'prompt')) {
+        option_tags = ("<option value=\"\">" + prompt + "</option>").html_safe().concat(option_tags);
+      }
+      return TagHelper.content_tag('select', option_tags, Object.update({
+        name: html_name,
+        id: this.sanitize_to_id(name)
+      }, options));
+    };
+
+    FormTagHelper.prototype.sanitize_to_id = function(name) {
+      return new String(name).replace(/]/g, '').replace(/[^-a-zA-Z0-9:.]/g, "_");
+    };
+
+    return FormTagHelper;
+
+  })();
+
+  helper = new FormTagHelper();
+
+  exports.select_tag = helper.select_tag;
+
+}).call(this);
+
+});
+
+require.define("/node_modules/form-tag-helper/node_modules/tag-helper/package.json", function (require, module, exports, __dirname, __filename) {
+module.exports = {"main":"./tag_helper.js"}
+});
+
+require.define("/node_modules/form-tag-helper/node_modules/tag-helper/tag_helper.js", function (require, module, exports, __dirname, __filename) {
+(function() {
+  var TagHelper, helper,
+    __indexOf = Array.prototype.indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  require('cream');
+
+  String.prototype.html_safe = function() {
+    this.is_html_safe = 1;
+    return this;
+  };
+
+  TagHelper = (function() {
+
+    function TagHelper() {}
+
+    TagHelper.prototype.HTML_ESCAPE = {
+      '&': '&amp;',
+      '>': '&gt;',
+      '<': '&lt;',
+      '"': '&quot;'
+    };
+
+    TagHelper.prototype.JSON_ESCAPE = {
+      '&': '\u0026',
+      '>': '\u003E',
+      '<': '\u003C'
+    };
+
+    TagHelper.prototype.BOOLEAN_ATTRIBUTES = ['disabled', 'readonly', 'multiple', 'checked', 'autobuffer', 'autoplay', 'controls', 'loop', 'selected', 'hidden', 'scoped', 'async', 'defer', 'reversed', 'ismap', 'seemless', 'muted', 'required', 'autofocus', 'novalidate', 'formnovalidate', 'open', 'pubdate'];
+
+    TagHelper.prototype.html_escape = function(s) {
+      if (!(s instanceof String)) s = String(s);
+      if (s.is_html_safe == null) {
+        return s.replace(/&/g, "&amp;").replace(/\"/g, "&quot;").replace(/>/g, "&gt;").replace(/</g, "&lt;").html_safe();
+      } else {
+        return s;
+      }
+    };
+
+    TagHelper.prototype.tag = function(name, options, open, escape) {
+      var tag_options;
+      if (options == null) options = null;
+      if (open == null) open = false;
+      if (escape == null) escape = true;
+      tag_options = '';
+      if (options) tag_options = this.tag_options(options, escape);
+      return ("<" + name + tag_options + (open ? '>' : ' />')).html_safe();
+    };
+
+    TagHelper.prototype.content_tag = function(name, content_or_options_with_block, options, escape) {
+      if (content_or_options_with_block == null) {
+        content_or_options_with_block = null;
+      }
+      if (options == null) options = null;
+      if (escape == null) escape = true;
+      return this.content_tag_string(name, content_or_options_with_block, options, escape);
+    };
+
+    TagHelper.prototype.content_tag_string = function(name, content, options, escape) {
+      var tag_options;
+      if (escape == null) escape = true;
+      tag_options = options ? this.tag_options(options, escape) : '';
+      return ("<" + name + tag_options + ">" + (escape ? this.html_escape(content) : content) + "</" + name + ">").html_safe();
+    };
+
+    TagHelper.prototype.tag_options = function(options, escape) {
+      var attrs, final_value, k, key, keys, v, value;
+      if (escape == null) escape = true;
+      keys = (function() {
+        var _results;
+        _results = [];
+        for (k in options) {
+          v = options[k];
+          _results.push(k);
+        }
+        return _results;
+      })();
+      if (keys.length !== 0) {
+        attrs = [];
+        for (key in options) {
+          value = options[key];
+          if (key === 'data' && typeof value === 'object') {
+            for (k in value) {
+              v = value[k];
+              if (typeof v !== 'string') v = JSON.stringify(v);
+              if (escape) v = this.html_escape(v);
+              attrs.push("data-" + (k.dasherize()) + "=\"" + v + "\"");
+            }
+          } else if (__indexOf.call(this.BOOLEAN_ATTRIBUTES, key) >= 0) {
+            if (value) attrs.push("" + key + "=\"" + key + "\"");
+          } else if (value !== null && value !== void 0) {
+            final_value = value;
+            if (value instanceof Array) final_value = value.join(" ");
+            if (escape) final_value = this.html_escape(final_value);
+            attrs.push("" + key + "=\"" + final_value + "\"");
+          }
+        }
+        if (attrs.length !== 0) {
+          return (" " + (attrs.sort().join(' '))).html_safe();
+        }
+      }
+    };
+
+    return TagHelper;
+
+  })();
+
+  helper = new TagHelper();
+
+  exports.html_escape = helper.html_escape;
+
+  exports.tag = helper.tag;
+
+  exports.content_tag = helper.content_tag_string;
+
+  exports.tag_options = helper.tag_options;
+
+  exports.BOOLEAN_ATTRIBUTES = helper.BOOLEAN_ATTRIBUTES;
+
+  exports.HTML_ESCAPE = helper.HTML_ESCAPE;
+
+  exports.JSON_ESCAPE = helper.JSON_ESCAPE;
+
+}).call(this);
+
+});
+
 require.define("/cafe.coffee", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var AssetTagHelper, DateHelper, UrlHelper, k, root, v;
+  var AssetTagHelper, DateHelper, FormOptionsHelper, FormTagHelper, UrlHelper, k, root, v;
 
   DateHelper = require('date-helper');
 
   UrlHelper = require('url-helper');
 
   AssetTagHelper = require('asset-tag-helper');
+
+  FormOptionsHelper = require('form-options-helper');
+
+  FormTagHelper = require('form-tag-helper');
 
   root = typeof window !== "undefined" && window !== null ? window : global;
 
@@ -2140,6 +2648,16 @@ require.define("/cafe.coffee", function (require, module, exports, __dirname, __
 
   for (k in AssetTagHelper) {
     v = AssetTagHelper[k];
+    root[k] = v;
+  }
+
+  for (k in FormOptionsHelper) {
+    v = FormOptionsHelper[k];
+    root[k] = v;
+  }
+
+  for (k in FormTagHelper) {
+    v = FormTagHelper[k];
     root[k] = v;
   }
 
